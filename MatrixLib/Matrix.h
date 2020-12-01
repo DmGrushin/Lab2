@@ -1,50 +1,181 @@
-#pragma once
-
+#ifndef _MATRIX_
+#define _MATRIX_
 #include "MyVector.h"
 
-template <class T>
-class TMatrix : public Vector<Vector<T>>
+const int MAX_MATRIX_SIZE = 100000;
+
+template <class ValType>
+class TMatrix : public TVector<TVector<ValType> >
 {
+private:
+	int mSize;
 public:
-	TMatrix(int _size = 0);
-	TMatrix(const TMatrix<T>& A);
+	TMatrix(int s = 10);
+	TMatrix(const TMatrix& mt);
+	TMatrix(const TVector<TVector<ValType> >& mt);
 	~TMatrix();
 
-	TMatrix<T>& operator = (const TMatrix<T>& A);
-	TMatrix<T> operator + (const TMatrix<T>& A);
+	int GetSize() { return mSize; };
+	bool operator==(const TMatrix& mt) const;
+	TMatrix& operator= (const TMatrix& mt);
+	TMatrix  operator+ (const TMatrix& mt);
+	TMatrix  operator- (const TMatrix& mt);
+	TMatrix  operator* (const TMatrix& mt);
+
+	friend istream& operator>>(istream& in, TMatrix& mt)
+	{
+		for (int i = 0; i < mt.Size; i++)
+		{
+			in >> mt.pVector[i];
+		}
+		return in;
+	}
+	friend ostream& operator<<(ostream& out, const TMatrix& mt)
+	{
+		for (int i = 0; i < mt.Size; i++)
+		{
+			out << mt.pVector[i] << endl;
+		}
+		return out;
+	}
 };
 
-template<class T>
-inline TMatrix<T>::TMatrix(int _size) : Vector<Vector<T>>(_size)
+template<class ValType>
+inline TMatrix<ValType>::TMatrix(int s): TVector<TVector <ValType> >(s)
 {
-}
-
-template<class T>
-inline TMatrix<T>::TMatrix(const TMatrix<T>& A) : Vector<Vector<T>>(A)
-{
-}
-
-template<class T>
-inline TMatrix<T>::~TMatrix()
-{
-}
-
-template<class T>
-inline TMatrix<T>& TMatrix<T>::operator=(const TMatrix<T>& A)
-{
-	if (this != &A)
+	if (s < 0 || s > MAX_MATRIX_SIZE)
 	{
-		Vector<Vector<T>>::operator=(A);
+		throw "Error";
+	}
+	mSize = s;
+
+	for (int i = 0; i < s; i++)
+	{
+		this->pVector[i] = TVector<ValType>(s - i);
+	}
+}
+
+template <class ValType>
+inline TMatrix<ValType>::TMatrix(const TMatrix<ValType>& mt) : TVector<TVector<ValType> >(mt)
+{
+	mSize = mt.mSize;
+}
+
+template <class ValType>
+inline TMatrix<ValType>::TMatrix(const TVector<TVector<ValType> >& mt) : TVector<TVector<ValType> >(mt)
+{
+}
+
+template<class ValType>
+inline TMatrix<ValType>::~TMatrix()
+{
+	if (mSize != 0)
+	{
+		mSize = NULL;
+	}
+}
+
+template <class ValType>
+bool TMatrix<ValType>::operator==(const TMatrix<ValType>& mt) const
+{
+	bool res = true;
+	int S = this->Size;
+	if (S != mt.Size)
+	{
+		res = false;
+	}
+	for (int i = 0; i < S; i++)
+	{
+		if (this->pVector[i] == mt.pVector[i])
+		{
+			res = true;
+		}
+		else res = false;
+	}
+	return res;
+}
+
+template <class ValType>
+inline TMatrix<ValType>& TMatrix<ValType>::operator=(const TMatrix<ValType>& mt)
+{
+	if (this != &mt)
+	{
+		if (this->Size != mt.Size)
+		{
+			if (this->pVector != NULL)
+			{
+				delete[] this->pVector;
+			}
+			this->pVector = new TVector<ValType>[mt.Size];
+		}
+		this->Size = mt.Size;
+		for (int i = 0; i < this->Size; i++)
+		{
+			this->pVector[i] = mt.pVector[i];
+		}
 	}
 	return *this;
 }
 
-template<class T>
-inline TMatrix<T> TMatrix<T>::operator+ (const TMatrix<T>& A)
+template <class ValType>
+inline TMatrix<ValType> TMatrix<ValType>::operator+(const TMatrix<ValType>& mt)
 {
-	TMatrix<T> tmp(*this);
-	for (int i = 0; i < this->length; i++)
-		tmp.x[i] = tmp.x[i] + A.x[i];
+	if (this->GetSize() != mt.Size)
+	{
+		throw "Error";
+	}
 
-	return Vector<Vector<T>>::operator+ (A);
+	TMatrix<ValType> tmp(*this);
+	for (int i = 0; i < this->Size; i++)
+	{
+		tmp.pVector[i] = tmp.pVector[i] + mt.pVector[i];
+	}
+	return tmp;
 }
+
+template <class ValType>
+inline TMatrix<ValType> TMatrix<ValType>::operator-(const TMatrix<ValType>& mt)
+{
+	if (this->GetSize() != mt.Size)
+	{
+		throw "Error";
+	}
+
+	TMatrix<ValType> tmp(*this);
+	for (int i = 0; i < this->Size; i++)
+	{
+		tmp.pVector[i] = tmp.pVector[i] - mt.pVector[i];
+	}
+	return tmp;
+}
+
+template<class ValType>
+inline TMatrix<ValType> TMatrix<ValType>::operator*(const TMatrix& mt)
+{
+	if (this->GetSize() != mt.Size)
+	{
+		throw "Error";
+	}
+
+	TMatrix<ValType> tmp(*this);
+	TMatrix<ValType> res(this->Size);
+
+	int row = this->Size;
+	int col = this->Size;
+
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			res.pVector[i][j] = 0;
+			for (int k = 0; k < col; k++)
+			{
+				res.pVector[i][j] += (tmp.pVector[i][k] * mt.pVector[k][j]);
+			}
+			col--;
+		}
+	}
+	return res;
+}
+
+#endif
